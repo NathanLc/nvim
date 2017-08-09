@@ -1,5 +1,5 @@
 " Basic settings {{{
-language en_US
+language en_US.UTF-8
 filetype off
 " }}}
 
@@ -7,13 +7,12 @@ filetype off
 " add vundle repo git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.config/nvim/bundle/Vundle.vim
-call vundle#begin()
+call vundle#begin("~/.config/nvim/bundle")
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
 Plugin 'neomake/neomake'
 Plugin 'scrooloose/nerdcommenter'
 Plugin 'joonty/vdebug' " :help Vdebug
-Plugin 'ctrlpvim/ctrlp.vim' " :help ctrlp
 Plugin 'tpope/vim-surround' " :help surround
 Plugin 'ludovicchabant/vim-gutentags'
 Plugin 'terryma/vim-smooth-scroll'
@@ -22,6 +21,7 @@ Plugin 'christoomey/vim-tmux-navigator'
 Plugin 'thaerkh/vim-workspace'
 Plugin 'jiangmiao/auto-pairs'
 Plugin 'mbbill/undotree'
+Plugin 'sonph/onehalf', {'rtp': 'vim/'}
 
 call vundle#end()            " required
 filetype plugin indent on    " required
@@ -57,20 +57,36 @@ let g:workspace_autosave_untrailspaces = 0
 let g:undotree_WindowLayout = 2
 " }}}
 
+" netrw settings
+let g:netrw_bufsettings = 'nomodifiable nomodified relativenumber number nobuflisted nowrap readonly'
+let g:netrw_banner = 0
+let g:netrw_liststyle = 3
+let g:netrw_winsize = 25
+
 " Terminal emulator setitngs
 let g:terminal_scrollback_buffer_size = 100000
 
 " Color and syntax settings {{{
 set background=dark
 syntax enable
-colorscheme nathan
+highlight clear
+if exists("syntax_on")
+  syntax reset
+endif
+colorscheme onehalfdark
+set termguicolors
+
+highlight! link NonText Comment
+highlight! link Whitespace Comment
+highlight! Search ctermfg=NONE guifg=NONE
+highlight! OverLength ctermbg=238
 " }}}
 
 " Global settings {{{
 set encoding=utf-8
 set fileencoding=utf-8
 set clipboard=unnamed
-set path=.,**       ",/usr/include,,
+set path+=**
 set relativenumber
 set number
 set list
@@ -84,7 +100,7 @@ set smartcase       " Do smart case matching
 set incsearch       " Incremental search
 set hlsearch
 set foldmethod=indent
-set foldnestmax=2
+set foldnestmax=5
 set foldlevelstart=1
 set scrolloff=3
 set tabstop=4       " Width of a tab
@@ -95,7 +111,7 @@ set matchpairs+=<:>     " Add html matching
 set wildmenu
 set wildmode=list:longest,full  " Command <Tab> completion, list matches, then longest common part, then all.
 set wildignore=*.o,*.obj,*.bak,*.exe,*.py[co],*.swp,*~,*.pyc,.svn,.git,**/node_modules/**
-set complete=.,w,b,u,t,i,kspell
+set complete=.,w,b,u,t,i ",kspell for spelling
 "set laststatus=2   " 2 lines for status bar
 set hidden          " Hide buffers when they are abandoned
 set visualbell
@@ -122,6 +138,7 @@ let maplocalleader="\<Space>"
 nnoremap j gj
 nnoremap k gk
 nnoremap <C-s> :w<ENTER>
+nnoremap z0 :setlocal foldlevel=0<CR>
 nnoremap z1 :setlocal foldlevel=1<CR>
 nnoremap z2 :setlocal foldlevel=2<CR>
 inoremap <C-s> <ESC>:w<ENTER>
@@ -131,7 +148,8 @@ inoremap jk <ESC>
 nnoremap <C-d> :call smooth_scroll#down(&scroll, 2, 1)<ENTER>
 nnoremap <C-u> :call smooth_scroll#up(&scroll, 2, 1)<ENTER>
 nnoremap <leader>tw :ToggleWorkspace<CR>
-nnoremap <leader>id :read !date "+\%Y-\%m-\%d \%H:\%M:\%S"<CR>kJ
+nnoremap <leader>id :read !date "+\%Y-\%m-\%d"<CR>kJ
+nnoremap <leader>it :read !date "+\%H:\%M:\%S"<CR>kJ
 
 " Windows and Tabs mappings
 nnoremap <leader>w <C-w>
@@ -145,11 +163,11 @@ nnoremap <leader>wj :resize -10<ENTER>
 nnoremap <leader>w" :12split term://$SHELL<CR>i
 nnoremap <leader>w' :vsplit term://$SHELL<CR>i
 nnoremap <leader>wm :resize 12<CR>
-nnoremap <leader>l :buffers<CR>:b<Space>
+nnoremap <leader>l :buffers<CR>:buffer<Space>
+nnoremap <leader>o :buffer #<CR>
 nnoremap <leader>f :find 
 nnoremap <leader>sf :sfind 
 nnoremap <leader>vf :vert sfind 
-nnoremap <leader>ep :b #<CR>
 nnoremap <leader>e :tabedit 
 nnoremap <leader>t :tabmove 
 
@@ -180,7 +198,6 @@ nnoremap <leader>tl :set list!<ENTER>
 nnoremap <leader>n :set number!<ENTER>:set relativenumber!<ENTER>
 
 " History mappings
-nnoremap <leader>bo :browse old<ENTER>
 nnoremap <leader>tu :UndotreeToggle<CR>
 nnoremap <leader>ul :undolist<CR>
 nnoremap <leader>dn :undolist<CR>:call DiffChangeNumber(
@@ -213,20 +230,17 @@ cnoremap <Esc>f <S-Right>
 " }}}
 
 " Abbreviations {{{
-
 iabbrev funciton function
 iabbrev fn function()<left>
 iabbrev ff false
 iabbrev tt true
-
 " }}}
 
 " File type settings and mappings {{{
 augroup global
     autocmd!
-    autocmd! BufNewFile,BufWritePost * Neomake
-    highlight OverLength ctermbg=238 ctermfg=white
-    match OverLength /\%81v/
+    autocmd BufNewFile,BufWritePost * Neomake
+    autocmd BufEnter * match OverLength /\%>80v/
 augroup END
 
 augroup terminal
@@ -236,7 +250,7 @@ augroup END
 
 augroup php
     autocmd!
-    autocmd BufNewFile,BufReadPost *.php setlocal foldlevel=1
+    autocmd FileType php setlocal foldlevel=1
 augroup END
 
 augroup javascript
@@ -248,44 +262,46 @@ augroup TODO_txt
     autocmd!
     autocmd BufNewFile,BufReadPost TODO.txt setlocal tabstop=2 shiftwidth=2
     autocmd BufNewFile,BufReadPost TODO.txt call InitTodoOptions()
-    autocmd BufNewFile,BufReadPost TODO.txt setlocal signcolumn=yes
+    " autocmd BufNewFile,BufReadPost TODO.txt setlocal signcolumn=yes
     autocmd BufNewFile,BufReadPost TODO.txt
         \ nnoremap <buffer> <localleader>st :call ChangeTodoStatus('TODO')<CR> |
         \ nnoremap <buffer> <localleader>sw :call ChangeTodoStatus('WAIT')<CR> |
         \ nnoremap <buffer> <localleader>sh :call ChangeTodoStatus('HELP')<CR> |
         \ nnoremap <buffer> <localleader>so :call ChangeTodoStatus('WIP')<CR>  |
         \ nnoremap <buffer> <localleader>sd :call ChangeTodoStatus('DONE')<CR> |
-        \ nnoremap <buffer> <localleader>vh :call ChangeTodoVisibility('high_visibility')<CR> |
-        \ nnoremap <buffer> <localleader>vm :call ChangeTodoVisibility('medium_visibility')<CR> |
-        \ nnoremap <buffer> <localleader>vr :call RemoveTodoVisibility()<CR>
+        \ nnoremap <buffer> <localleader>sn :call ChangeTodoStatus('NOPE')<CR> |
+        " \ nnoremap <buffer> <localleader>vh :call ChangeTodoVisibility('high_visibility')<CR> |
+        " \ nnoremap <buffer> <localleader>vm :call ChangeTodoVisibility('medium_visibility')<CR> |
+        " \ nnoremap <buffer> <localleader>vr :call RemoveTodoVisibility()<CR>
 
     function! InitTodoOptions()
-        syntax keyword Todo TODO
+        syntax keyword SpellCap TODO
         syntax keyword Error HIGH
         syntax keyword DiffAdd DONE
-        syntax keyword Search HELP
-        syntax keyword SpellCap WAIT
-        syntax keyword SpellBad WIP
-        sign define high_visibility text=H texthl=Error
-        sign define medium_visibility text=M texthl=Todo
+        syntax keyword Pmenu NOPE
+        syntax keyword Constant HELP
+        syntax keyword Directory WAIT
+        syntax keyword Question WIP
+        " sign define high_visibility text=H texthl=Error
+        " sign define medium_visibility text=M texthl=Todo
     endfunction
 
-    function! RemoveTodoVisibility()
-        let b:current_line = line('.')
-        execute "sign unplace " . b:current_line
-    endfunction
+    " function! RemoveTodoVisibility()
+        " let b:current_line = line('.')
+        " execute "sign unplace " . b:current_line
+    " endfunction
 
-    function! ChangeTodoVisibility(visibility)
-        call RemoveTodoVisibility()
-        let b:available_visibilities = GetAvailableVisibilities()
-        let b:current_line = line('.')
+    " function! ChangeTodoVisibility(visibility)
+        " call RemoveTodoVisibility()
+        " let b:available_visibilities = GetAvailableVisibilities()
+        " let b:current_line = line('.')
 
-        for visio in b:available_visibilities
-            if visio ==# a:visibility
-                execute "sign place " . b:current_line . " line=" . b:current_line . " name=" . a:visibility . " file=" . expand('%:p')
-            endif
-        endfor
-    endfunction
+        " for visio in b:available_visibilities
+            " if visio ==# a:visibility
+                " execute "sign place " . b:current_line . " line=" . b:current_line . " name=" . a:visibility . " file=" . expand('%:p')
+            " endif
+        " endfor
+    " endfunction
 
     function! ChangeTodoStatus(status_name)
         let b:available_statuses = GetAvailableStatuses()
@@ -321,14 +337,14 @@ augroup TODO_txt
     endfunction
 
     function! GetAvailableStatuses()
-        let statuses_list = ['DONE', 'TODO', 'WAIT', 'HELP', 'WIP']
+        let statuses_list = ['DONE', 'TODO', 'WAIT', 'HELP', 'WIP', 'NOPE']
         return statuses_list
     endfunction
 
-    function! GetAvailableVisibilities()
-        let visibilities_list = ['high_visibility', 'medium_visibility']
-        return visibilities_list
-    endfunction
+    " function! GetAvailableVisibilities()
+        " let visibilities_list = ['high_visibility', 'medium_visibility']
+        " return visibilities_list
+    " endfunction
 augroup END
 
 " }}}
