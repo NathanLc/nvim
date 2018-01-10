@@ -10,18 +10,20 @@ set rtp+=~/.config/nvim/bundle/Vundle.vim
 call vundle#begin("~/.config/nvim/bundle")
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
-Plugin 'neomake/neomake'
-Plugin 'scrooloose/nerdcommenter'
-Plugin 'joonty/vdebug' " :help Vdebug
-Plugin 'tpope/vim-surround' " :help surround
-Plugin 'ludovicchabant/vim-gutentags'
-Plugin 'terryma/vim-smooth-scroll'
 Plugin 'ap/vim-css-color'
 Plugin 'christoomey/vim-tmux-navigator'
-Plugin 'thaerkh/vim-workspace'
+Plugin 'easymotion/vim-easymotion'
 Plugin 'jiangmiao/auto-pairs'
+Plugin 'joonty/vdebug' " :help Vdebug
+Plugin 'ludovicchabant/vim-gutentags'
 Plugin 'mbbill/undotree'
+Plugin 'neomake/neomake'
+Plugin 'scrooloose/nerdcommenter'
 Plugin 'sonph/onehalf', {'rtp': 'vim/'}
+Plugin 'terryma/vim-smooth-scroll'
+Plugin 'thaerkh/vim-workspace'
+Plugin 'tpope/vim-rsi'
+Plugin 'tpope/vim-surround' " :help surround
 
 call vundle#end()            " required
 filetype plugin indent on    " required
@@ -47,14 +49,15 @@ let g:vdebug_options= {
 let g:neomake_javascript_enabled_makers = ['eslint']
 let g:neomake_php_enabled_makers = ['php']
 
-let g:ctrlp_max_files=8000
-let g:ctrlp_custom_ignore='\v[\/](node_modules|dist|bower_components|vendor)|(\.(swp|git|svn))$'
-
 let g:NERDSpaceDelims = 1
 
 let g:workspace_autosave_untrailspaces = 0
 
 let g:undotree_WindowLayout = 2
+
+let g:AutoPairs = {'(':')', '[':']', '{':'}',"'":"'",'"':'"', '`':'`', '<':'>'}
+
+map ; <Plug>(easymotion-prefix)
 " }}}
 
 " netrw settings
@@ -103,8 +106,8 @@ set foldmethod=indent
 set foldnestmax=5
 set foldlevelstart=1
 set scrolloff=3
-set tabstop=4       " Width of a tab
-set shiftwidth=4    " Width when indenting
+set tabstop=2       " Width of a tab
+set shiftwidth=2    " Width when indenting
 set expandtab       " Tabs become spaces
 set smarttab        " Spaces removed by <BS> at beginning of line
 set matchpairs+=<:>     " Add html matching
@@ -116,6 +119,7 @@ set complete=.,w,b,u,t,i ",kspell for spelling
 set hidden          " Hide buffers when they are abandoned
 set visualbell
 set noerrorbells
+set nopaste
 set undofile " Set undo history"
 set undodir=$HOME/.vim/undo
 set undolevels=10000
@@ -137,10 +141,14 @@ let maplocalleader="\<Space>"
 " Global mappings
 nnoremap j gj
 nnoremap k gk
-nnoremap <C-s> :w<ENTER>
-nnoremap z0 :setlocal foldlevel=0<CR>
+" Replacing next occurence by , and ? like n and N with search
+nnoremap , ;
+nnoremap ? ,
+vnoremap , ;
+vnoremap ? ,
 nnoremap z1 :setlocal foldlevel=1<CR>
 nnoremap z2 :setlocal foldlevel=2<CR>
+nnoremap <C-s> :w<ENTER>
 inoremap <C-s> <ESC>:w<ENTER>
 inoremap jk <ESC>
 "inoremap <C-h> <left>
@@ -150,6 +158,9 @@ nnoremap <C-u> :call smooth_scroll#up(&scroll, 2, 1)<ENTER>
 nnoremap <leader>tw :ToggleWorkspace<CR>
 nnoremap <leader>id :read !date "+\%Y-\%m-\%d"<CR>kJ
 nnoremap <leader>it :read !date "+\%H:\%M:\%S"<CR>kJ
+
+" Visual related mappings
+nnoremap <leader>_ _vg_
 
 " Windows and Tabs mappings
 nnoremap <leader>w <C-w>
@@ -163,6 +174,7 @@ nnoremap <leader>wj :resize -10<ENTER>
 nnoremap <leader>w" :12split term://$SHELL<CR>i
 nnoremap <leader>w' :vsplit term://$SHELL<CR>i
 nnoremap <leader>wm :resize 12<CR>
+nnoremap <leader>wM :resize 46<CR>
 nnoremap <leader>l :buffers<CR>:buffer<Space>
 nnoremap <leader>o :buffer #<CR>
 nnoremap <leader>f :find 
@@ -170,6 +182,10 @@ nnoremap <leader>sf :sfind
 nnoremap <leader>vf :vert sfind 
 nnoremap <leader>e :tabedit 
 nnoremap <leader>t :tabmove 
+
+" Movement mappings
+onoremap i_ :<C-u>normal! _vg_<CR>
+onoremap a_ :<C-u>normal! 0vg_<CR>
 
 " Terminal mappings
 :tnoremap <Esc> <C-\><C-n>
@@ -221,12 +237,6 @@ vnoremap <leader>' <ESC>`<i'<ESC>`>la'<ESC>
 vnoremap <leader>( <ESC>`<i(<ESC>`>la)<ESC>
 vnoremap <leader>[ <ESC>`<i[<ESC>`>la]<ESC>
 vnoremap <leader>{ <ESC>`<i{<ESC>`>la}<ESC>
-" Command-line mappings
-cnoremap <C-a> <Home>
-cnoremap <C-f> <Right>
-cnoremap <C-b> <Left>
-cnoremap <Esc>b <S-Left>
-cnoremap <Esc>f <S-Right>
 " }}}
 
 " Abbreviations {{{
@@ -240,7 +250,7 @@ iabbrev tt true
 augroup global
     autocmd!
     autocmd BufNewFile,BufWritePost * Neomake
-    autocmd BufEnter * match OverLength /\%>80v/
+    " autocmd BufEnter * match OverLength /\%>81v/
 augroup END
 
 augroup terminal
@@ -250,7 +260,7 @@ augroup END
 
 augroup php
     autocmd!
-    autocmd FileType php setlocal foldlevel=1
+    autocmd FileType php setlocal foldlevel=1 tabstop=4 shiftwidth=4
 augroup END
 
 augroup javascript
